@@ -1,0 +1,87 @@
+# Nahui CI — Phase 1 baseline.
+#
+# For now this only builds, tests, and pushes an image. No SBOM, scan, signing,
+# provenance, or attestation yet — that's intentional, it's the insecure
+# starting point the later phases harden. The missing pieces are left as TODOs
+# below so it's obvious what's still coming.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./... -race -count=1
+
+      - name: Build
+        run: go build ./...
+
+  image:
+    name: Build & Push image
+    needs: test
+    runs-on: ubuntu-latest
+    # Only publish on push to main / tags, not on PRs (esp. from forks).
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+      # id-token: write   # TODO(Phase 3): required for cosign keyless signing
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version
+        id: ver
+        run: echo "version=$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.ver.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      # TODO(Phase 2): SBOM with Syft, scan with Grype, fail on critical.
+      # TODO(Phase 3): cosign keyless-sign the image + log it in Rekor.
+      # TODO(Phase 4): SLSA provenance via slsa-github-generator (Build L3).
+      # TODO(Phase 4): cosign attest the SBOM + provenance to the image digest.

@@ -1,0 +1,10 @@
+.git
+.github
+deploy
+docs
+policies
+sbom
+*.md
+Makefile
+.gitignore
+.dockerignore

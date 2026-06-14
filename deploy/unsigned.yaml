@@ -1,0 +1,28 @@
+# Same app, but unsigned and using the :latest tag. The Phase-5 policy should
+# deny this before it ever gets scheduled: no signature, no provenance, no SBOM
+# attestation, and a mutable tag. This is the half of the demo that fails on
+# purpose.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nahui-app-unsigned
+  namespace: nahui
+  labels:
+    app: nahui-app-unsigned
+    nahui.dev/trust: unsigned
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nahui-app-unsigned
+  template:
+    metadata:
+      labels:
+        app: nahui-app-unsigned
+    spec:
+      containers:
+        - name: nahui-app
+          # Mutable tag, never signed or attested. Fails every check.
+          image: ghcr.io/brawndon-manu/nahui-app:latest
+          ports:
+            - containerPort: 8080

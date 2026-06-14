@@ -1,0 +1,66 @@
+# The good case: a digest-pinned image that's been signed + attested. The
+# Phase-5 policy should admit this one and let it run.
+#
+# Swap the image below for a real signed digest from the pipeline. Has to be
+# digest-pinned (no :latest) or the policy rejects it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nahui-app
+  namespace: nahui
+  labels:
+    app: nahui-app
+    nahui.dev/trust: verified
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nahui-app
+  template:
+    metadata:
+      labels:
+        app: nahui-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nahui-app
+          # TODO: pin to the signed digest CI prints, e.g.
+          #   ghcr.io/brawndon-manu/nahui-app@sha256:<digest>
+          image: ghcr.io/brawndon-manu/nahui-app@sha256:REPLACE_WITH_SIGNED_DIGEST
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nahui-app
+  namespace: nahui
+spec:
+  selector:
+    app: nahui-app
+  ports:
+    - port: 80
+      targetPort: 8080

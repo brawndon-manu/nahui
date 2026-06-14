@@ -18,7 +18,7 @@
 
 ## What is Nahui?
 
-**Nahui** (Nāhui) is the Nahuatl word for *four* — the foundational ordering principle in Mexica cosmology, the number of directions, of pillars, of the cycles that hold the world together. This project rests on **four pillars of supply chain trust**:
+I named it after **Nahui** (Nāhui), the Nahuatl word for *four* — the foundational ordering principle in Mexica cosmology, the number of directions, of pillars, of the cycles that hold the world together. I built it on **four pillars of supply chain trust**:
 
 1. **Know what's in it** — Software Bill of Materials (SBOM)
 2. **Prove it wasn't swapped** — cryptographic signing (Sigstore)
@@ -41,7 +41,7 @@ Modern software is *assembled*, not written. A single container image can pull i
 | **Log4Shell** (2021) | A single transitive dependency exposed millions of services |
 | **xz/liblzma backdoor** (2024) | A multi-year social-engineering attack on a maintainer nearly backdoored mainstream Linux |
 
-The defensive answer the industry and regulators converged on — pushed into federal procurement by US Executive Order 14028 — is **supply chain integrity**: SBOM, provenance, signing, and *enforcement at deploy time*. Nahui is a working reference implementation of exactly that.
+The defensive answer the industry and regulators converged on — pushed into federal procurement by US Executive Order 14028 — is **supply chain integrity**: SBOM, provenance, signing, and *enforcement at deploy time*. I built Nahui as a working reference implementation of exactly that.
 
 ---
 
@@ -150,7 +150,7 @@ That final contrast is the whole point: it makes invisible cryptographic work *v
 
 ## Why this exists
 
-Nahui is a portfolio project demonstrating fluency in the current software supply chain security stack — Sigstore, SLSA, SBOM, and policy-as-code enforcement — across the full SDLC: build → scan → sign → attest → enforce.
+I built Nahui to demonstrate my fluency in the current software supply chain security stack — Sigstore, SLSA, SBOM, and policy-as-code enforcement — across the full SDLC: build → scan → sign → attest → enforce.
 
 ## License
 

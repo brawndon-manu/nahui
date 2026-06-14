@@ -1,0 +1,58 @@
+# Phase 5 — admission-time enforcement (Kyverno). This is the "refuse anything
+# unverified" pillar.
+#
+# Starting point only: set the keyless issuer/subject below to our CI's OIDC
+# identity before this will admit real images.
+#
+# Apply with: kubectl apply -f policies/verify-images.yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: nahui-verify-images
+  annotations:
+    policies.kyverno.io/title: Verify image signatures & attestations
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/description: >-
+      Admit a pod only if every image is signed by the trusted CI identity,
+      carries a SLSA provenance attestation and an SBOM attestation, and is
+      pinned by digest. Anything else is rejected before scheduling.
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail
+  rules:
+    # 1. Signature + provenance + SBOM all have to verify against our identity.
+    - name: verify-signature-and-attestations
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [nahui]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/brawndon-manu/nahui-app*"
+          attestors:
+            - entries:
+                - keyless:
+                    # TODO: set these to our pipeline's OIDC identity.
+                    issuer: "https://token.actions.githubusercontent.com"
+                    subject: "https://github.com/brawndon-manu/nahui/*"
+                    rekor:
+                      url: "https://rekor.sigstore.dev"
+          attestations:
+            - type: https://slsa.dev/provenance/v1
+            - type: https://cyclonedx.org/bom
+
+    # 2. No mutable tags. Images have to be digest-pinned.
+    - name: require-digest-pinned-images
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [nahui]
+      validate:
+        message: "Images must be pinned by digest (no mutable tags like :latest)."
+        pattern:
+          spec:
+            containers:
+              - image: "*@sha256:*"

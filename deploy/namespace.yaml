@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nahui
+  labels:
+    # Phase-5 policy only targets namespaces with this label, so we can turn
+    # enforcement on gradually instead of cluster-wide.
+    nahui.dev/enforce: "true"

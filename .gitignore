@@ -1,0 +1,26 @@
+# Build output (binary at repo root only — must not match the cmd/nahui-app/ dir)
+/bin/
+/out/
+/nahui-app
+/nahui-app.exe
+
+# Generated supply-chain artifacts (CI / make produces these, don't commit them)
+/sbom/*.json
+/sbom/*.spdx.json
+/sbom/*.cdx.json
+*.sig
+*.att
+*.intoto.jsonl
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Internal work logs / phase notes — local only, not part of the repo
+Docs-Internal/
