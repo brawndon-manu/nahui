@@ -31,8 +31,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: nahui-app
-          # Signed, digest-pinned image produced by the pipeline.
-          image: ghcr.io/brawndon-manu/nahui-app@sha256:0aea969585f4e4a6894ba2879313f95c99722f9c650315e5199f5cee640792ee
+          # Signed, digest-pinned image produced by the pipeline (also carries
+          # the SBOM attestation the policy checks).
+          image: ghcr.io/brawndon-manu/nahui-app@sha256:46dde11bec636e09f96157a2f6f773496478f13186ae3a96f62a516bb17c7f73
           ports:
             - containerPort: 8080
           readinessProbe:

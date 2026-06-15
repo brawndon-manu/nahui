@@ -1,16 +1,19 @@
 # Phase 5 — admission-time enforcement (Kyverno). The "refuse anything
 # unverified" pillar.
 #
-# This policy admits a pod only if every nahui-app image is:
-#   1. signed (keyless cosign) by THIS repo's CI OIDC identity, and
-#   2. pinned by digest (no mutable tags).
+# This policy admits a pod only if:
+#   1. every image is signed (keyless cosign) by THIS repo's CI identity,
+#   2. our app image carries a valid SBOM attestation from that same identity, and
+#   3. every image is pinned by digest (no mutable tags).
 # Anything else is denied before the pod is ever scheduled.
 #
-# Note: in-cluster verification of the SLSA provenance / SBOM *attestations*
-# (Phase 4) is a planned refinement. Those attestations exist and are verifiable
-# with cosign out-of-cluster; wiring Kyverno to verify GitHub's native
-# attestation format needs more setup, so it's intentionally not enforced here
-# yet.
+# Note on provenance: the SLSA build provenance is verified out-of-cluster
+# (cosign / gh attestation verify) rather than here. GitHub's native provenance
+# is non-falsifiable Build L3 because GitHub's control plane generates it;
+# re-publishing it as an in-job cosign attestation just to satisfy the cluster
+# would be a weaker, self-attested copy, so we don't. The SBOM attestation below
+# is published by the pipeline in cosign format specifically so admission can
+# verify it.
 #
 # Apply with: kubectl apply -f policies/verify-images.yaml
 apiVersion: kyverno.io/v1
@@ -18,12 +21,12 @@ kind: ClusterPolicy
 metadata:
   name: nahui-verify-images
   annotations:
-    policies.kyverno.io/title: Verify image signatures
+    policies.kyverno.io/title: Verify image signatures & SBOM attestation
     policies.kyverno.io/category: Supply Chain Security
     policies.kyverno.io/description: >-
-      Admit a pod only if every nahui-app image is signed by this repo's CI
-      identity (keyless cosign) and pinned by digest. Anything else is rejected
-      before scheduling.
+      Admit a pod only if every image is signed by this repo's CI identity
+      (keyless cosign), our app image has a valid SBOM attestation, and every
+      image is pinned by digest. Anything else is rejected before scheduling.
 spec:
   validationFailureAction: Enforce
   webhookTimeoutSeconds: 30
@@ -54,7 +57,31 @@ spec:
                     rekor:
                       url: "https://rekor.sigstore.dev"
 
-    # 2. No mutable tags. Images have to be digest-pinned.
+    # 2. Our app image must also carry a valid SBOM attestation (SPDX),
+    #    signed by the same CI identity. The pipeline publishes this in cosign
+    #    format (the .att path Kyverno reads), so the cluster can confirm the
+    #    bill of materials came from our build and wasn't swapped.
+    - name: verify-sbom-attestation
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [nahui]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/brawndon-manu/nahui-app*"
+          mutateDigest: false
+          attestations:
+            - type: https://spdx.dev/Document
+              attestors:
+                - entries:
+                    - keyless:
+                        issuer: "https://token.actions.githubusercontent.com"
+                        subjectRegExp: "^https://github.com/brawndon-manu/nahui/.+"
+                        rekor:
+                          url: "https://rekor.sigstore.dev"
+
+    # 3. No mutable tags. Images have to be digest-pinned.
     - name: require-digest-pinned-images
       match:
         any:
