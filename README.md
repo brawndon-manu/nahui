@@ -126,6 +126,22 @@ kubectl apply -f deploy/unsigned.yaml      # ❌ DENIED by policy
 
 The two deploys above are the test: the verified image runs, the unsigned one is refused at admission.
 
+### Seeing it work
+
+**Verify the artifact came from the pipeline** — the signature, then the SBOM and provenance attestations:
+
+![verify signature](docs/media/01-verify-signature.gif)
+
+![verify attestations](docs/media/02-verify-attestations.gif)
+
+**Enforce it at the cluster** — the verified image is admitted and runs:
+
+![verified runs](docs/media/03-verified-runs.gif)
+
+An untrusted image (a normal public nginx) is denied before it can schedule:
+
+![unsigned denied](docs/media/04-unsigned-denied.gif)
+
 ---
 
 ## Roadmap
@@ -135,7 +151,7 @@ The two deploys above are the test: the verified image runs, the unsigned one is
 - [x] **Phase 3** — cosign keyless signing + Rekor transparency entries
 - [x] **Phase 4** — SLSA provenance attestation (target Build L3)
 - [x] **Phase 5** — Admission control: verify signature + provenance + SBOM before scheduling
-- [ ] **Phase 6** — Threat model write-up + architecture diagram + demo recording
+- [x] **Phase 6** — Threat model write-up + architecture diagram + demo recording
 
 ### Stretch
 
