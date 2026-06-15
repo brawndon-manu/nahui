@@ -71,6 +71,22 @@ verify: ## Verify the image signature against this repo's CI identity (keyless)
 	#   cosign verify-attestation --type slsaprovenance $(IMAGE_REF) ...
 
 # --- Pillar 4: Enforce (Phase 5) -------------------------------------------
+KIND_CLUSTER ?= nahui
+KIND_NODE_IMAGE ?= kindest/node:v1.31.6
+
+.PHONY: cluster-up
+cluster-up: ## Create kind cluster + install Kyverno + apply namespace & policy
+	kind create cluster --name $(KIND_CLUSTER) --image $(KIND_NODE_IMAGE)
+	kubectl wait --for=condition=Ready node/$(KIND_CLUSTER)-control-plane --timeout=120s
+	kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/latest/download/install.yaml
+	kubectl wait --for=condition=Available deployment/kyverno-admission-controller -n kyverno --timeout=180s
+	kubectl apply -f deploy/namespace.yaml
+	kubectl apply -f policies/verify-images.yaml
+
+.PHONY: cluster-down
+cluster-down: ## Delete the kind cluster
+	kind delete cluster --name $(KIND_CLUSTER)
+
 .PHONY: deploy-verified
 deploy-verified: ## Deploy the verified image (should be admitted)
 	kubectl apply -f deploy/verified.yaml
