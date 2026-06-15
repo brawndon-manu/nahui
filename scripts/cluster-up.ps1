@@ -9,10 +9,11 @@
 
 param(
   [string]$ClusterName = "nahui",
-  # Pinned to a cgroup-v1-compatible node image. The default kind image (newer
-  # k8s) needs cgroup v2, which some WSL2 setups don't expose. v1.31.6 runs on
-  # both, and the k8s version does not matter for the admission demo.
-  [string]$NodeImage   = "kindest/node:v1.31.6"
+  # Empty = use kind's default (current) node image. Only override if your
+  # WSL2/Docker is stuck on cgroup v1, which the current image can't run on:
+  #   .\scripts\cluster-up.ps1 -NodeImage kindest/node:v1.31.6
+  # (The proper fix is cgroup v2 - see Docs-Internal / README.)
+  [string]$NodeImage   = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,9 +36,12 @@ if ($LASTEXITCODE -ne 0) {
 # 1. Cluster (idempotent - skip if it already exists).
 if ((kind get clusters 2>$null) -contains $ClusterName) {
   Write-Host "Cluster '$ClusterName' already exists - skipping create."
-} else {
+} elseif ($NodeImage) {
   Write-Host "Creating kind cluster '$ClusterName' ($NodeImage)..."
   kind create cluster --name $ClusterName --image $NodeImage
+} else {
+  Write-Host "Creating kind cluster '$ClusterName' (kind default image)..."
+  kind create cluster --name $ClusterName
 }
 kubectl wait --for=condition=Ready "node/$ClusterName-control-plane" --timeout=120s
 

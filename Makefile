@@ -72,11 +72,13 @@ verify: ## Verify the image signature against this repo's CI identity (keyless)
 
 # --- Pillar 4: Enforce (Phase 5) -------------------------------------------
 KIND_CLUSTER ?= nahui
-KIND_NODE_IMAGE ?= kindest/node:v1.31.6
+# Empty = kind's default (current) image. Override only on cgroup-v1 hosts:
+#   make cluster-up KIND_NODE_IMAGE=kindest/node:v1.31.6
+KIND_NODE_IMAGE ?=
 
 .PHONY: cluster-up
 cluster-up: ## Create kind cluster + install Kyverno + apply namespace & policy
-	kind create cluster --name $(KIND_CLUSTER) --image $(KIND_NODE_IMAGE)
+	kind create cluster --name $(KIND_CLUSTER) $(if $(KIND_NODE_IMAGE),--image $(KIND_NODE_IMAGE))
 	kubectl wait --for=condition=Ready node/$(KIND_CLUSTER)-control-plane --timeout=120s
 	kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/latest/download/install.yaml
 	kubectl wait --for=condition=Available deployment/kyverno-admission-controller -n kyverno --timeout=180s
