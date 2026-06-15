@@ -7,9 +7,10 @@
 
 The thing being defended is the path from source commit to running workload:
 build, SBOM, scan, sign, provenance, attestation, and admission-time
-enforcement. Out of scope (on purpose): application-layer vulnerabilities at
-runtime — that's what the Falco stretch goal is for — and a compromise of my own
-dev machine.
+enforcement. Runtime behavior is also watched now, via Falco
+([docs](runtime-detection.md)), so a workload that's compromised after it's
+admitted can still be caught in the act. Out of scope (on purpose): a compromise
+of my own dev machine.
 
 ## Trust boundaries
 

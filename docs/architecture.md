@@ -29,6 +29,8 @@ flowchart TD
 
     adm -->|all checks pass| run(["Pod runs"])
     adm -->|any check fails| deny(["Admission denied"])
+
+    run -.->|syscalls watched| falco["Falco<br/>runtime detection"]
 ```
 
 ## Components
@@ -66,6 +68,10 @@ admission. GitHub's provenance is non-falsifiable Build L3 because GitHub's
 control plane generates it; re-issuing it as an in-job cosign attestation just
 so Kyverno could read it would be a weaker, self-attested copy. So the cluster
 verifies signature + SBOM, and provenance is checked in the supply chain.
+
+Past admission, Falco watches the running workloads at the syscall level and
+flags suspicious behavior live (see [runtime detection](runtime-detection.md)),
+adding a runtime layer on top of the build-time controls.
 
 ## Design choices
 

@@ -142,6 +142,10 @@ An untrusted image (a normal public nginx) is denied before it can schedule:
 
 ![unsigned denied](docs/media/04-unsigned-denied.gif)
 
+**Runtime detection (stretch).** Past admission, Falco watches running containers. Here it catches an attacker reading the password-hash file inside one ([details](docs/runtime-detection.md)):
+
+![falco detects](docs/media/05-falco-detect.gif)
+
 ---
 
 ## Roadmap
@@ -155,7 +159,7 @@ An untrusted image (a normal public nginx) is denied before it can schedule:
 
 ### Stretch
 
-- [ ] Runtime detection with **Falco** fed a simulated attack
+- [x] Runtime detection with **Falco** fed a simulated attack ([docs](docs/runtime-detection.md))
 - [ ] Same admission policy in **Kyverno vs. OPA Gatekeeper** + tradeoff write-up
 - [ ] **VEX** documents to suppress non-exploitable CVE noise
 - [ ] **Vault** for build-time secrets
