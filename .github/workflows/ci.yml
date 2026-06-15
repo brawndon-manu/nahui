@@ -157,3 +157,16 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           sbom-path: nahui-app.spdx.json
           push-to-registry: true
+
+      # The GitHub attestations above are the canonical, publicly-verifiable
+      # record (Rekor + L3 provenance), but they're stored as OCI referrers,
+      # which in-cluster verifiers like Kyverno don't discover. Publish the
+      # SAME SBOM as a cosign-format attestation (stored as the .att tag) so the
+      # admission policy can verify an SBOM attestation at deploy time.
+      - name: Attest SBOM (cosign format, for in-cluster verification)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          cosign attest --yes --type spdxjson \
+            --predicate nahui-app.spdx.json \
+            "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
